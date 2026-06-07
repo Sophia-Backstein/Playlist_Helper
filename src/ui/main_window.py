@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 from PySide6.QtCore import Qt, QTimer, Signal, QObject
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
-    QFileDialog, QMessageBox, QApplication,
+    QLabel, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout,
+    QSplitter, QWidget, QFileDialog, QMessageBox, QApplication,
 )
 
 from src.models.track import Track
@@ -43,6 +43,7 @@ class WorkerSignals(QObject):
     track_path_changed = Signal(str, str)  # old_path, new_path
     equalize_done = Signal()
     loudest_target_ready = Signal(float)  # computed loudest target in dB
+    save_all_complete = Signal(int)  # number of tracks successfully saved
 
 
 class MainWindow(QMainWindow):
@@ -195,6 +196,7 @@ class MainWindow(QMainWindow):
         self._worker_signals.track_path_changed.connect(self._on_track_path_changed)
         self._worker_signals.loudest_target_ready.connect(self._on_loudest_target_ready)
         self._worker_signals.equalize_done.connect(self._on_equalize_done)
+        self._worker_signals.save_all_complete.connect(self._on_save_all_complete)
     
     def _update_undo_redo_buttons(self) -> None:
         """Update undo/redo button enabled states."""
@@ -304,7 +306,8 @@ class MainWindow(QMainWindow):
         self._topbar.setEnabled(False)
         self._track_list.setEnabled(False)
         self._volume_panel.setEnabled(False)
-        
+        self._save_all_btn.setEnabled(False)
+
         def save_work():
             try:
                 result = self._process_single_track(track)
@@ -353,8 +356,8 @@ class MainWindow(QMainWindow):
                         f"{fail_count} failed"
                     )
                 else:
-                    self._status_bar.showMessage(
-                        f"Saved all {success_count} track(s)"
+                    self._worker_signals.save_all_complete.emit(
+                        success_count,
                     )
             except Exception as e:
                 self._worker_signals.error.emit(
@@ -761,6 +764,12 @@ class MainWindow(QMainWindow):
         self._set_ui_enabled(True)
         self._volume_panel.set_info("")
     
+    def _on_save_all_complete(self, count: int) -> None:
+        """Handle Save All completion on the main thread."""
+        self._status_bar.showMessage(
+            f"Saved all {count} track(s)",
+        )
+
     def _on_track_saved(self, file_path: str) -> None:
         """Handle successful track save."""
         self._status_bar.showMessage(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import threading
 from typing import Any, Dict, List, Optional
 
@@ -313,13 +314,12 @@ class MainWindow(QMainWindow):
                         err_msg = (
                             f"Save verification failed for {track.file_name}: "
                             f"expected {expected_duration:.1f}s but got wrong "
-                            f"duration. Restoring from backup."
+                            f"duration."
                         )
                         if backup_path and os.path.exists(backup_path):
-                            import shutil
                             try:
                                 shutil.copy2(backup_path, output_path)
-                                err_msg += " Backup restored."
+                                err_msg += " Restored from backup."
                             except OSError:
                                 err_msg += " Could not restore backup."
                         self._worker_signals.error.emit(err_msg)
@@ -467,10 +467,25 @@ class MainWindow(QMainWindow):
                         track.file_path, target_db
                     )
                     if result_path and result_path != track.file_path:
-                        # Copy result back over original, then clean up
-                        import shutil
-                        shutil.copy2(result_path, track.file_path)
-                        os.remove(result_path)
+                        pre_duration = get_duration_ffprobe(track.file_path)
+                        backup_path = save_with_backup(result_path, track.file_path)
+                        if pre_duration > 0 and not verify_file_duration(
+                            track.file_path, pre_duration,
+                        ):
+                            err_msg = (
+                                f"Equalization verification failed for "
+                                f"{track.file_name}: "
+                                f"duration {pre_duration:.1f}s before but "
+                                f"mismatch after equalization."
+                            )
+                            if backup_path and os.path.exists(backup_path):
+                                try:
+                                    shutil.copy2(backup_path, track.file_path)
+                                    err_msg += " Restored from backup."
+                                except OSError:
+                                    err_msg += " Could not restore backup."
+                            self._worker_signals.error.emit(err_msg)
+                            continue
                 
                 self._worker_signals.equalize_done.emit()
             except Exception as e:
@@ -530,9 +545,25 @@ class MainWindow(QMainWindow):
                         track.file_path, target_db=target_db,
                     )
                     if result_path and result_path != track.file_path:
-                        import shutil
-                        shutil.copy2(result_path, track.file_path)
-                        os.remove(result_path)
+                        pre_duration = get_duration_ffprobe(track.file_path)
+                        backup_path = save_with_backup(result_path, track.file_path)
+                        if pre_duration > 0 and not verify_file_duration(
+                            track.file_path, pre_duration,
+                        ):
+                            err_msg = (
+                                f"Equalization verification failed for "
+                                f"{track.file_name}: "
+                                f"duration {pre_duration:.1f}s before but "
+                                f"mismatch after equalization."
+                            )
+                            if backup_path and os.path.exists(backup_path):
+                                try:
+                                    shutil.copy2(backup_path, track.file_path)
+                                    err_msg += " Restored from backup."
+                                except OSError:
+                                    err_msg += " Could not restore backup."
+                            self._worker_signals.error.emit(err_msg)
+                            continue
                 
                 self._worker_signals.equalize_done.emit()
             except Exception as e:

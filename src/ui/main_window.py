@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import threading
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from PySide6.QtCore import Qt, QTimer, Signal, QObject
 from PySide6.QtWidgets import (
@@ -450,6 +453,9 @@ class MainWindow(QMainWindow):
             return output_path
 
         except Exception as e:
+            logger.exception(
+                "Error saving %s: %s", track.file_name, e,
+            )
             self._worker_signals.error.emit(
                 f"Error saving {track.file_name}: {str(e)}",
             )

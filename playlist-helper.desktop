@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Playlist Helper
+Comment=Audio file management and processing application
+Exec=playlist-helper
+Icon=playlist-helper
+Terminal=false
+Categories=Audio;AudioVideo;Utility;
+StartupNotify=true

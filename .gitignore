@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+dist/
+build/
+*.spec
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Wine cross-compilation
+.wine/
+
+# Build artifacts
+*.deb
+*.rpm
+*.exe
+nullevision-installer.exe
+python-installer.exe
+deb_dist/
+rpmbuild/

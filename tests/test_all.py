@@ -551,6 +551,25 @@ def run_all_tests(limit_per_format: int | None = None) -> int:
     }
 
     files = get_original_files()
+    if not files:
+        log("=" * 70)
+        log("WARNING: No test audio files found!")
+        log("")
+        log("The test suite requires audio files in the following directory:")
+        log(f"  {ORIGINAL_DIR}")
+        log("")
+        log("To add test files:")
+        log("  1. Create audio files in one of these formats:")
+        log(f"     {', '.join(sorted(SUPPORTED_EXTENSIONS))}")
+        log("  2. Place them in the directory above")
+        log("  3. Re-run the tests")
+        log("")
+        log("See README.md > Testing for more details.")
+        log("=" * 70)
+        log("")
+        log("SKIPPED: No test files — exiting.")
+        return 0
+
     log(f"Found {len(files)} audio files in {ORIGINAL_DIR}")
 
     if limit_per_format is not None and limit_per_format > 0:

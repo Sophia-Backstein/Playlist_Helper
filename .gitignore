@@ -28,3 +28,15 @@ nullevision-installer.exe
 python-installer.exe
 deb_dist/
 rpmbuild/
+
+# Audio files (copyrighted — place your own test files)
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.m4b
+*.ogg
+*.opus
+*.aac
+*.wma
+*.aiff

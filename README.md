@@ -119,7 +119,8 @@ Playlist_Helper/
 │       └── file_ops.py      # File operations helpers
 ├── tests/
 │   ├── test_all.py          # Full test suite
-│   └── original/            # Test audio files
+│   ├── original/            # Place your test audio files here
+│   └── cover_test.png       # Test image for cover art tests
 ├── install_linux.sh         # Linux installer
 └── LICENSE.txt              # MIT License
 ```
@@ -142,6 +143,21 @@ python main.py --run-tests
 # Test with specific file limit per format
 python main.py --run-tests --limit-per-format 5
 ```
+
+### Test audio files
+
+The test suite processes audio files from `tests/original/`. **No audio files are
+bundled with the repository** due to copyright concerns. You must provide your own.
+
+**To prepare test files:**
+
+1. Create or download short audio files (5-15 seconds is plenty) in these formats:
+   - `.mp3`, `.wav`, `.flac`, `.m4a` — required for full test coverage
+   - `.opus`, `.ogg`, `.aac`, `.wma`, `.m4b`, `.aiff` — optional additional coverage
+2. Place them in `tests/original/`
+3. Run the tests — they will detect the files automatically
+
+The test suite will warn you if no files are found and tell you where to place them.
 
 ### Test coverage
 

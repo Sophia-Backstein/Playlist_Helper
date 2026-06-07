@@ -119,6 +119,55 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(self._splitter, 1)
         
+        # Save All bar
+        save_all_bar = QWidget()
+        save_all_bar.setFixedHeight(42)
+        save_all_bar.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+                border-top: 1px solid #333;
+            }
+        """)
+        save_all_layout = QHBoxLayout(save_all_bar)
+        save_all_layout.setContentsMargins(16, 5, 16, 5)
+        save_all_layout.setSpacing(8)
+
+        self._save_all_label = QLabel(
+            "No tracks loaded"
+        )
+        self._save_all_label.setStyleSheet("color: #888; font-size: 12px; border: none;")
+        save_all_layout.addWidget(self._save_all_label)
+
+        save_all_layout.addStretch()
+
+        self._save_all_btn = QPushButton("Save All")
+        self._save_all_btn.setEnabled(False)
+        self._save_all_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0a84ff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 6px 20px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #0a6ed1;
+            }
+            QPushButton:pressed {
+                background-color: #0858a3;
+            }
+            QPushButton:disabled {
+                background-color: #333;
+                color: #666;
+            }
+        """)
+        self._save_all_btn.clicked.connect(self._on_save_all)
+        save_all_layout.addWidget(self._save_all_btn)
+
+        main_layout.addWidget(save_all_bar)
+
         # Status bar
         self._status_bar = self.statusBar()
         self._status_bar.setStyleSheet("""
@@ -228,7 +277,10 @@ class MainWindow(QMainWindow):
         
         self._tracks = tracks
         self._track_list.load_tracks(tracks)
-        self._volume_panel.set_enabled(len(tracks) > 0)
+        has_tracks = len(tracks) > 0
+        self._volume_panel.set_enabled(has_tracks)
+        self._save_all_btn.setEnabled(has_tracks)
+        self._update_save_all_label()
         self._update_equalize_button_labels()
         
         self._status_bar.showMessage(
@@ -250,93 +302,14 @@ class MainWindow(QMainWindow):
         self._track_list.setEnabled(False)
         self._volume_panel.setEnabled(False)
         
-        # Run in thread
         def save_work():
-            backup_path: Optional[str] = None
             try:
-                # Build output filename
-                base_name, _ = os.path.splitext(track.file_name)
-                if not base_name:
-                    base_name = os.path.splitext(os.path.basename(track.file_path))[0]
-                
-                output_suffix = f".{track.format}"
-                temp_path = create_temp_file(suffix=output_suffix)
-                
-                # Compute volume gain from cleaned average if available
-                volume_gain = None
-                if track.cleaned_average_db != 0.0 and track.average_volume_db != 0.0:
-                    volume_gain = round(track.cleaned_average_db - track.average_volume_db, 2)
-                
-                # Process audio: trim + convert + volume
-                success = process_and_convert(
-                    input_path=track.file_path,
-                    output_path=temp_path,
-                    target_format=track.format,
-                    start_time=track.trim_start,
-                    end_time=track.trim_end,
-                    volume_gain_db=volume_gain,
-                )
-                
-                if not success or not os.path.exists(temp_path):
-                    self._worker_signals.error.emit(
-                        f"Failed to process: {track.file_name}"
-                    )
-                    return
-                
-                # Set cover art if available
-                if track.cover_image_path:
-                    set_cover_art(temp_path, track.cover_image_path)
-
-                # Set title metadata
-                if track.title:
-                    set_title_metadata(temp_path, track.title)
-
-                # Determine correct output path (use filename + format extension)
-                old_file_path = track.file_path
-                old_ext = os.path.splitext(old_file_path)[1]
-                new_ext = f".{track.format}"
-                if old_ext.lower() != new_ext or track.file_name != os.path.basename(old_file_path):
-                    output_dir = os.path.dirname(old_file_path)
-                    output_name = os.path.splitext(track.file_name)[0] + new_ext
-                    output_path = os.path.join(output_dir, output_name)
-                else:
-                    output_path = old_file_path
-
-                expected_duration = track.trim_end - track.trim_start
-
-                # Safe save with backup (backup uses original path)
-                backup_path = save_with_backup(temp_path, output_path)
-
-                if expected_duration > 0:
-                    if not verify_file_duration(
-                        output_path, expected_duration,
-                    ):
-                        err_msg = (
-                            f"Save verification failed for {track.file_name}: "
-                            f"expected {expected_duration:.1f}s but got wrong "
-                            f"duration."
-                        )
-                        if backup_path and os.path.exists(backup_path):
-                            try:
-                                shutil.copy2(backup_path, output_path)
-                                err_msg += " Restored from backup."
-                            except OSError:
-                                err_msg += " Could not restore backup."
-                        self._worker_signals.error.emit(err_msg)
-                        return
-
-                # Update track path if format extension changed
-                if output_path != old_file_path:
-                    track.file_path = output_path
-                    self._worker_signals.track_path_changed.emit(
-                        old_file_path, output_path
-                    )
-                
-                self._worker_signals.track_saved.emit(track.file_path)
-                
+                result = self._process_single_track(track)
+                if result:
+                    self._worker_signals.track_saved.emit(result)
             except Exception as e:
                 self._worker_signals.error.emit(
-                    f"Error saving {track.file_name}: {str(e)}"
+                    f"Error saving {track.file_name}: {str(e)}",
                 )
             finally:
                 self._worker_signals.finished.emit()
@@ -344,6 +317,144 @@ class MainWindow(QMainWindow):
         thread = threading.Thread(target=save_work, daemon=True)
         thread.start()
     
+    def _on_save_all(self) -> None:
+        """Handle Save All button — save every track."""
+        tracks = self._track_list.get_all_tracks()
+        if not tracks:
+            return
+
+        self._volume_panel._playback_bar.stop()
+        self._volume_panel.set_progress(
+            f"Saving all {len(tracks)} tracks..."
+        )
+        self._set_ui_enabled(False)
+
+        def save_all_work():
+            success_count = 0
+            fail_count = 0
+            try:
+                for track in tracks:
+                    self._worker_signals.progress.emit(
+                        f"Saving: {track.file_name}"
+                    )
+                    result = self._process_single_track(track)
+                    if result:
+                        success_count += 1
+                        self._worker_signals.track_saved.emit(result)
+                    else:
+                        fail_count += 1
+
+                if fail_count > 0:
+                    self._worker_signals.error.emit(
+                        f"Saved {success_count} track(s), "
+                        f"{fail_count} failed"
+                    )
+                else:
+                    self._status_bar.showMessage(
+                        f"Saved all {success_count} track(s)"
+                    )
+            except Exception as e:
+                self._worker_signals.error.emit(
+                    f"Save all error: {str(e)}"
+                )
+            finally:
+                self._worker_signals.finished.emit()
+
+        thread = threading.Thread(target=save_all_work, daemon=True)
+        thread.start()
+
+    def _process_single_track(self, track: Track) -> Optional[str]:
+        """Process and save a single track.
+
+        Must be called from a background thread.
+        Emits error/track_path_changed signals on self._worker_signals.
+        Does NOT emit finished or track_saved — caller's responsibility.
+
+        Args:
+            track: Track to process.
+
+        Returns:
+            Output file path on success, None on failure.
+        """
+        try:
+            base_name, _ = os.path.splitext(track.file_name)
+            if not base_name:
+                base_name = os.path.splitext(os.path.basename(track.file_path))[0]
+
+            output_suffix = f".{track.format}"
+            temp_path = create_temp_file(suffix=output_suffix)
+
+            volume_gain = None
+            if track.cleaned_average_db != 0.0 and track.average_volume_db != 0.0:
+                volume_gain = round(
+                    track.cleaned_average_db - track.average_volume_db, 2,
+                )
+
+            success = process_and_convert(
+                input_path=track.file_path,
+                output_path=temp_path,
+                target_format=track.format,
+                start_time=track.trim_start,
+                end_time=track.trim_end,
+                volume_gain_db=volume_gain,
+            )
+
+            if not success or not os.path.exists(temp_path):
+                self._worker_signals.error.emit(
+                    f"Failed to process: {track.file_name}",
+                )
+                return None
+
+            if track.cover_image_path:
+                set_cover_art(temp_path, track.cover_image_path)
+
+            if track.title:
+                set_title_metadata(temp_path, track.title)
+
+            old_file_path = track.file_path
+            old_ext = os.path.splitext(old_file_path)[1]
+            new_ext = f".{track.format}"
+            if (old_ext.lower() != new_ext
+                    or track.file_name != os.path.basename(old_file_path)):
+                output_dir = os.path.dirname(old_file_path)
+                output_name = os.path.splitext(track.file_name)[0] + new_ext
+                output_path = os.path.join(output_dir, output_name)
+            else:
+                output_path = old_file_path
+
+            expected_duration = track.trim_end - track.trim_start
+            backup_path = save_with_backup(temp_path, output_path)
+
+            if expected_duration > 0:
+                if not verify_file_duration(output_path, expected_duration):
+                    err_msg = (
+                        f"Save verification failed for {track.file_name}: "
+                        f"expected {expected_duration:.1f}s but got wrong "
+                        f"duration."
+                    )
+                    if backup_path and os.path.exists(backup_path):
+                        try:
+                            shutil.copy2(backup_path, output_path)
+                            err_msg += " Restored from backup."
+                        except OSError:
+                            err_msg += " Could not restore backup."
+                    self._worker_signals.error.emit(err_msg)
+                    return None
+
+            if output_path != old_file_path:
+                track.file_path = output_path
+                self._worker_signals.track_path_changed.emit(
+                    old_file_path, output_path,
+                )
+
+            return output_path
+
+        except Exception as e:
+            self._worker_signals.error.emit(
+                f"Error saving {track.file_name}: {str(e)}",
+            )
+            return None
+
     def _on_reset_track(self, track: Track) -> None:
         """Handle reset for a single track."""
         # Create undo/redo command
@@ -581,6 +692,19 @@ class MainWindow(QMainWindow):
         self._topbar.setEnabled(enabled)
         self._track_list.setEnabled(enabled)
         self._volume_panel.setEnabled(enabled and len(self._tracks) > 0)
+        self._save_all_btn.setEnabled(enabled and len(self._tracks) > 0)
+
+    def _update_save_all_label(self) -> None:
+        """Update the Save All bar label to reflect current track count."""
+        n = len(self._tracks)
+        if n == 0:
+            self._save_all_label.setText("No tracks loaded")
+        elif n == 1:
+            self._save_all_label.setText("Save 1 track with current settings")
+        else:
+            self._save_all_label.setText(
+                f"Save all {n} tracks with current settings"
+            )
 
     def _update_equalize_button_labels(self) -> None:
         """Update button labels with target volumes from current tracks.

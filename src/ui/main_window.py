@@ -20,7 +20,8 @@ from src.ui.volume_panel import VolumePanel
 from src.audio.scanner import scan_folder
 from src.audio.analyzer import analyze_volume_ffmpeg, compute_cleaned_average
 from src.audio.metadata import (
-    get_duration_ffprobe, extract_cover_art, read_title_metadata,
+    get_duration_ffprobe, verify_file_duration,
+    extract_cover_art, read_title_metadata,
     set_cover_art, set_title_metadata,
 )
 from src.audio.processor import process_and_convert
@@ -235,9 +236,12 @@ class MainWindow(QMainWindow):
     
     def _on_save_track(self, track: Track) -> None:
         """Handle save for a single track.
-        
+
         Runs the actual processing in a background thread.
+        Stops playback and verifies output duration to catch corruption.
         """
+        self._volume_panel._playback_bar.stop()
+
         self._volume_panel.set_progress(
             f"Saving: {track.file_name}..."
         )
@@ -247,6 +251,7 @@ class MainWindow(QMainWindow):
         
         # Run in thread
         def save_work():
+            backup_path: Optional[str] = None
             try:
                 # Build output filename
                 base_name, _ = os.path.splitext(track.file_name)
@@ -296,8 +301,29 @@ class MainWindow(QMainWindow):
                 else:
                     output_path = old_file_path
 
+                expected_duration = track.trim_end - track.trim_start
+
                 # Safe save with backup (backup uses original path)
-                save_with_backup(temp_path, output_path)
+                backup_path = save_with_backup(temp_path, output_path)
+
+                if expected_duration > 0:
+                    if not verify_file_duration(
+                        output_path, expected_duration,
+                    ):
+                        err_msg = (
+                            f"Save verification failed for {track.file_name}: "
+                            f"expected {expected_duration:.1f}s but got wrong "
+                            f"duration. Restoring from backup."
+                        )
+                        if backup_path and os.path.exists(backup_path):
+                            import shutil
+                            try:
+                                shutil.copy2(backup_path, output_path)
+                                err_msg += " Backup restored."
+                            except OSError:
+                                err_msg += " Could not restore backup."
+                        self._worker_signals.error.emit(err_msg)
+                        return
 
                 # Update track path if format extension changed
                 if output_path != old_file_path:
@@ -425,6 +451,7 @@ class MainWindow(QMainWindow):
         target_db = sum(avg_values) / len(avg_values)
         self._last_equalize_target = target_db
 
+        self._volume_panel._playback_bar.stop()
         self._volume_panel.set_progress(
             f"Equalizing {len(self._tracks)} tracks to {target_db:.1f} dB..."
         )
@@ -466,6 +493,7 @@ class MainWindow(QMainWindow):
         if not self._tracks:
             return
         
+        self._volume_panel._playback_bar.stop()
         self._volume_panel.set_progress(
             f"Analyzing cleaned averages for {len(self._tracks)} tracks..."
         )

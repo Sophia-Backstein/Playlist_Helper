@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
 import tempfile
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def get_duration_ffprobe(file_path: str) -> float:
@@ -107,7 +110,7 @@ def set_cover_art(file_path: str, image_path: str) -> bool:
                 "ffmpeg", "-y", "-v", "quiet",
                 "-i", file_path,
                 "-i", image_path,
-                "-map", "0:a", "-map", "1:v",
+                "-map", "0:a:0", "-map", "1:v:0",
                 "-c", "copy",
                 "-metadata:s:v", "title=Album cover",
                 "-disposition:v", "attached_pic",
@@ -150,8 +153,9 @@ def set_title_metadata(file_path: str, title: str) -> bool:
             [
                 "ffmpeg", "-y", "-v", "quiet",
                 "-i", file_path,
-                "-metadata", f"title={title}",
+                "-map", "0",
                 "-c", "copy",
+                "-metadata", f"title={title}",
                 tmp_path,
             ],
             capture_output=True, timeout=60,
@@ -169,6 +173,51 @@ def set_title_metadata(file_path: str, title: str) -> bool:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
         return False
+
+
+def verify_file_duration(
+    file_path: str,
+    expected_seconds: float,
+    tolerance_ratio: float = 0.05,
+) -> bool:
+    """Verify an audio file's actual duration matches expected duration.
+
+    Uses ffprobe to measure the file, then compares against expected.
+    Logs a warning on mismatch.
+
+    Args:
+        file_path: Path to the audio file.
+        expected_seconds: Expected duration in seconds.
+        tolerance_ratio: Allowed deviation as ratio of expected (default 5%).
+
+    Returns:
+        True if duration is within tolerance, False otherwise.
+    """
+    if expected_seconds <= 0:
+        return True  # No meaningful comparison
+
+    actual = get_duration_ffprobe(file_path)
+    if actual <= 0:
+        logger.warning("verify_file_duration: could not measure %s", file_path)
+        return False
+
+    diff = abs(actual - expected_seconds)
+    max_diff = expected_seconds * tolerance_ratio
+    if diff > max_diff:
+        logger.error(
+            "verify_file_duration: MISMATCH %s — expected=%.1fs actual=%.1fs "
+            "diff=%.1fs (%.1f%%)",
+            os.path.basename(file_path),
+            expected_seconds, actual, diff,
+            (diff / expected_seconds) * 100,
+        )
+        return False
+
+    logger.info(
+        "verify_file_duration: OK %s — %.1fs (expected %.1fs)",
+        os.path.basename(file_path), actual, expected_seconds,
+    )
+    return True
 
 
 def read_title_metadata(file_path: str) -> str:

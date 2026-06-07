@@ -181,9 +181,15 @@ class PlaybackBar(QWidget):
         """Load and prepare a track for playback.
 
         Resets position to 0, stops any current playback,
-        and sets the media source to the given file.
+        clears any cached state from previous inode, and sets
+        the media source to the given file.
         """
         self._player.stop()
+        # Clear source to force Qt's FFmpeg backend to fully reset
+        # its internal state. Without this, a file whose inode was
+        # atomically replaced (os.replace) can cause stale metadata
+        # (e.g., doubled duration) to bleed into the new playback.
+        self._player.setSource(QUrl())
         self._is_playing = False
         self._play_btn.setText("\u25B6")
         self._position_slider.setRange(0, 0)

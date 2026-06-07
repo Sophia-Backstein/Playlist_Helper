@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
+from typing import Optional
 
 
 def ensure_backup_dir(file_path: str) -> str:
@@ -22,7 +23,7 @@ def ensure_backup_dir(file_path: str) -> str:
     return backup_dir
 
 
-def save_with_backup(temp_path: str, original_path: str) -> None:
+def save_with_backup(temp_path: str, original_path: str) -> Optional[str]:
     """Safely save by replacing the original file with a temp file.
     
     Process:
@@ -35,6 +36,10 @@ def save_with_backup(temp_path: str, original_path: str) -> None:
     Args:
         temp_path: Path to the temporary processed file.
         original_path: Path to the original file to replace.
+        
+    Returns:
+        Path to the backup file (if one was created), or None if no backup
+        was made (e.g., original didn't exist).
         
     Raises:
         FileNotFoundError: If temp_path doesn't exist.
@@ -49,7 +54,7 @@ def save_with_backup(temp_path: str, original_path: str) -> None:
     if not os.path.exists(original_path):
         # No original to backup — just move temp to original
         shutil.move(temp_path, original_path)
-        return
+        return None
     
     backup_dir = ensure_backup_dir(original_path)
     original_basename = os.path.basename(original_path)
@@ -88,6 +93,8 @@ def save_with_backup(temp_path: str, original_path: str) -> None:
                 os.remove(temp_path)
             except OSError:
                 pass
+    
+    return backup_path
 
 
 def create_temp_file(suffix: str = "") -> str:

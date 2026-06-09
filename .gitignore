@@ -40,3 +40,12 @@ rpmbuild/
 *.aac
 *.wma
 *.aiff
+
+# Video files (copyrighted — place your own test files)
+*.mp4
+*.avi
+*.flv
+*.mkv
+*.webp
+*.webm
+*.mov

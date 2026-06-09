@@ -9,14 +9,15 @@ from typing import Optional
 
 @dataclass
 class Track:
-    """Represents a single audio track in the playlist.
+    """Represents a single audio or video track in the playlist.
     
     Attributes:
-        file_path: Absolute path to the audio file.
+        file_path: Absolute path to the media file.
         file_name: Original filename (for display, editable by user).
         title: Music title metadata (separate from filename).
-        duration_seconds: Total duration of the audio file.
+        duration_seconds: Total duration of the media file.
         format: Output format selected by user ("mp3", "wav", or "flac").
+        media_type: Type of media — "audio" or "video".
         trim_start: Start position for trimming in seconds (default 0.0).
         trim_end: End position for trimming in seconds (default = duration).
         average_volume_db: Overall average volume in dB (read-only).
@@ -31,6 +32,7 @@ class Track:
     title: str = ""
     duration_seconds: float = 0.0
     format: str = "mp3"
+    media_type: str = "audio"
     trim_start: float = 0.0
     trim_end: float = 0.0
     average_volume_db: float = 0.0

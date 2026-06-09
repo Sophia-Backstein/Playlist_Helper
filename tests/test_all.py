@@ -365,11 +365,13 @@ def test_volume_change(file_path: str) -> bool:
 
         # Apply gain via ffmpeg — use lossless WAV to avoid encoder artifacts
         tmp = create_temp_file(suffix=".wav")
+        no_video = ["-vn"] if is_video_file(file_path) else []
 
         result = subprocess.run(
             [
                 "ffmpeg", "-y", "-v", "quiet",
                 "-i", file_path,
+                *no_video,
                 "-af", f"volume={VOLUME_TEST_GAIN_DB}dB",
                 "-c:a", "pcm_s16le",
                 "-f", "wav",

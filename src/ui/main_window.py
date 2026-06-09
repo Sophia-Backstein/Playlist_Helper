@@ -215,10 +215,10 @@ class MainWindow(QMainWindow):
         self._status_bar.showMessage(f"Scanning: {folder}")
         QApplication.processEvents()
         
-        # Scan for audio files
-        audio_files = scan_folder(folder)
+        # Scan for media files
+        media_files = scan_folder(folder)
         
-        if not audio_files:
+        if not media_files:
             QMessageBox.information(
                 self,
                 "No Media Files",
@@ -237,15 +237,15 @@ class MainWindow(QMainWindow):
         # Create track objects
         tracks: List[Track] = []
         self._status_bar.showMessage(
-            f"Loading {len(audio_files)} audio files..."
+            f"Loading {len(media_files)} media files..."
         )
         QApplication.processEvents()
         
-        for i, file_path in enumerate(audio_files):
+        for i, file_path in enumerate(media_files):
             # Update status periodically
             if i % 5 == 0:
                 self._status_bar.showMessage(
-                    f"Loading {i + 1}/{len(audio_files)}: "
+                    f"Loading {i + 1}/{len(media_files)}: "
                     f"{os.path.basename(file_path)}"
                 )
                 QApplication.processEvents()
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
         self._update_equalize_button_labels()
         
         self._status_bar.showMessage(
-            f"Loaded {len(tracks)} audio files from {os.path.basename(folder)}"
+            f"Loaded {len(tracks)} media files from {os.path.basename(folder)}"
         )
     
     def _on_save_track(self, track: Track) -> None:

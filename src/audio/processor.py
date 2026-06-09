@@ -1,10 +1,17 @@
-"""Audio processing operations: trimming, format conversion."""
+"""Audio/video processing operations: trimming, format conversion."""
 
 from __future__ import annotations
 
 import os
 import subprocess
 from typing import Optional
+
+from src.audio.scanner import is_video_file
+
+
+def _no_video_flag(file_path: str) -> list[str]:
+    """Return ['-vn'] if the input is a video file, else empty list."""
+    return ["-vn"] if is_video_file(file_path) else []
 
 
 def trim_audio(
@@ -52,6 +59,7 @@ def trim_audio(
                 "-i", input_path,
                 "-ss", str(start_time),
                 "-to", str(end_time),
+                *_no_video_flag(input_path),
                 *codec_args,
                 output_path,
             ],
@@ -91,6 +99,7 @@ def convert_format(
             [
                 "ffmpeg", "-y", "-v", "quiet",
                 "-i", input_path,
+                *_no_video_flag(input_path),
                 *codec_args,
                 output_path,
             ],
@@ -145,6 +154,8 @@ def process_and_convert(
         cmd.extend(["-ss", str(start_time)])
         if end_time is not None:
             cmd.extend(["-to", str(end_time)])
+        
+        cmd.extend(_no_video_flag(input_path))
         
         # Filter
         if filter_chain:

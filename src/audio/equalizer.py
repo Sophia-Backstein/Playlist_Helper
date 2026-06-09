@@ -8,6 +8,7 @@ import tempfile
 from typing import Dict, List, Optional
 
 from .analyzer import compute_cleaned_average
+from .scanner import is_video_file
 
 
 def get_gain_for_target(
@@ -74,9 +75,11 @@ def equalize_to_average(
         else:
             codec = "aac"
         
+        no_video = ["-vn"] if is_video_file(file_path) else []
         cmd = [
             "ffmpeg", "-y", "-v", "quiet",
             "-i", file_path,
+            *no_video,
             "-af", f"volume={gain}dB",
             "-c:a", codec,
             output_path,
@@ -145,10 +148,12 @@ def equalize_to_loudest(
         else:
             codec = "aac"
         
+        no_video = ["-vn"] if is_video_file(file_path) else []
         result = subprocess.run(
             [
                 "ffmpeg", "-y", "-v", "quiet",
                 "-i", file_path,
+                *no_video,
                 "-af", f"volume={gain}dB",
                 "-c:a", codec,
                 output_path,

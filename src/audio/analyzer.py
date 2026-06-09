@@ -11,6 +11,8 @@ import struct
 import tempfile
 from typing import Dict, List, Optional
 
+from .scanner import is_video_file
+
 
 def analyze_volume_ffmpeg(file_path: str) -> Dict[str, float]:
     """Analyze audio volume using FFmpeg's volumedetect filter.
@@ -28,10 +30,12 @@ def analyze_volume_ffmpeg(file_path: str) -> Dict[str, float]:
     }
     
     try:
+        no_video = ["-vn"] if is_video_file(file_path) else []
         proc = subprocess.run(
             [
                 "ffmpeg", "-v", "info",
                 "-i", file_path,
+                *no_video,
                 "-af", "volumedetect",
                 "-f", "null", "-",
             ],
@@ -128,9 +132,11 @@ def _get_raw_samples(file_path: str, max_duration: float = 30.0) -> List[float]:
         analyze_duration = min(duration, max_duration) if duration > 0 else max_duration
         
         # Convert to mono WAV for analysis (take first 30s max)
+        no_video = ["-vn"] if is_video_file(file_path) else []
         convert_args = [
             "ffmpeg", "-y", "-v", "quiet",
             "-i", file_path,
+            *no_video,
             "-t", str(analyze_duration),
             "-ac", "1",       # mono
             "-ar", "22050",   # 22kHz sample rate — good enough for volume

@@ -1,4 +1,4 @@
-"""Audio metadata reading and writing using FFmpeg/FFprobe."""
+"""Media metadata reading and writing using FFmpeg/FFprobe."""
 
 from __future__ import annotations
 
@@ -90,10 +90,10 @@ def extract_cover_art(file_path: str) -> Optional[str]:
 
 
 def set_cover_art(file_path: str, image_path: str) -> bool:
-    """Set cover art on an audio file using FFmpeg.
+    """Set cover art on a media file using FFmpeg.
     
     Args:
-        file_path: Path to the audio file (will be modified in place).
+        file_path: Path to the media file (will be modified in place).
         image_path: Path to the cover image.
         
     Returns:
@@ -105,19 +105,17 @@ def set_cover_art(file_path: str, image_path: str) -> bool:
     os.close(tmp_fd)
     
     try:
-        result = subprocess.run(
-            [
-                "ffmpeg", "-y", "-v", "quiet",
-                "-i", file_path,
-                "-i", image_path,
-                "-map", "0:a:0", "-map", "1:v:0",
-                "-c", "copy",
-                "-metadata:s:v", "title=Album cover",
-                "-disposition:v", "attached_pic",
-                tmp_path,
-            ],
-            capture_output=True, timeout=60,
-        )
+        cmd = [
+            "ffmpeg", "-y", "-v", "quiet",
+            "-i", file_path,
+            "-i", image_path,
+            "-map", "0:a:0", "-map", "1:v:0",
+            "-c", "copy",
+            "-metadata:s:v", "title=Album cover",
+            "-disposition:v", "attached_pic",
+            tmp_path,
+        ]
+        result = subprocess.run(cmd, capture_output=True, timeout=60)
         if result.returncode == 0 and os.path.getsize(tmp_path) > 0:
             try:
                 os.replace(tmp_path, file_path)

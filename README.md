@@ -8,10 +8,10 @@ A cross-platform desktop application for managing, editing, and processing audio
 
 ## Features
 
-- **Load audio files** from folders — supports mp3, m4a/flac, opus, wav
+- **Load audio and video files** from folders — audio: mp3, m4a/flac, opus, wav; video: mp4, avi, flv, mkv, webp, webm, mov
 - **Trim audio** with a dual-point range slider and visual preview
 - **Edit metadata** — filenames, titles, album art
-- **Convert formats** — between mp3, wav, flac, m4a, opus
+- **Extract audio from video** — convert video files to mp3, wav, or flac
 - **Volume analysis & equalization**:
   - "Equalize to Average" — normalize all tracks to the mean volume
   - "Equalize to Loudest" — normalize all tracks to match the loudest track
@@ -154,6 +154,7 @@ bundled with the repository** due to copyright concerns. You must provide your o
 1. Create or download short audio files (5-15 seconds is plenty) in these formats:
    - `.mp3`, `.wav`, `.flac`, `.m4a` — required for full test coverage
    - `.opus`, `.ogg`, `.aac`, `.wma`, `.m4b`, `.aiff` — optional additional coverage
+   - `.mp4`, `.avi`, `.flv`, `.mkv`, `.webp`, `.webm`, `.mov` — video test coverage (optional)
 2. Place them in `tests/original/`
 3. Run the tests — they will detect the files automatically
 

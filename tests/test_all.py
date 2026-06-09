@@ -1,7 +1,11 @@
 """Comprehensive test suite for Playlist Helper.
 
-Tests all 8 function categories across all audio files.
+Tests all function categories across all media files.
 Workflow: copy from tests/original/ -> tests/active/ -> run functions -> verify.
+
+Supports both audio files (mp3, wav, flac, m4a, opus) and video files
+(mp4, avi, flv, mkv, webp, webm, mov). Video files are tested for
+audio extraction operations (trim, convert, equalize, volume analysis).
 
 Functions tested:
   - Loading (scan, Track creation, volume analysis)
@@ -29,7 +33,7 @@ import math
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.audio.scanner import scan_folder, SUPPORTED_EXTENSIONS
+from src.audio.scanner import scan_folder, SUPPORTED_EXTENSIONS, VIDEO_EXTENSIONS, SUPPORTED_MEDIA_EXTENSIONS, is_video_file
 from src.audio.analyzer import (
     analyze_volume_ffmpeg, compute_cleaned_average,
 )

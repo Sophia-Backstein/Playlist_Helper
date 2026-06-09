@@ -120,11 +120,14 @@ def test_loading(file_path: str) -> bool:
         cleaned = compute_cleaned_average(file_path)
 
         # Track creation
+        media_type = "video" if is_video_file(file_path) else "audio"
         track = Track(
             file_path=file_path,
             file_name=os.path.basename(file_path),
             title=read_title_metadata(file_path),
             duration_seconds=duration,
+            format="mp3",
+            media_type=media_type,
             average_volume_db=volume.get("mean_volume", 0.0),
             cleaned_average_db=cleaned,
             max_volume_db=volume.get("max_volume", 0.0),

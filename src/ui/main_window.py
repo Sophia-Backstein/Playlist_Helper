@@ -21,7 +21,7 @@ from src.history.command import CommandHistory, CallbackCommand
 from src.ui.topbar import TopBar
 from src.ui.track_list import TrackList
 from src.ui.volume_panel import VolumePanel
-from src.audio.scanner import scan_folder
+from src.audio.scanner import scan_folder, is_video_file
 from src.audio.analyzer import analyze_volume_ffmpeg, compute_cleaned_average
 from src.audio.metadata import (
     get_duration_ffprobe, verify_file_duration,
@@ -221,11 +221,12 @@ class MainWindow(QMainWindow):
         if not audio_files:
             QMessageBox.information(
                 self,
-                "No Audio Files",
-                f"No supported audio files found in:\n{folder}\n\n"
-                f"Supported formats: mp3, m4a, opus, wav, flac",
+                "No Media Files",
+                f"No supported media files found in:\n{folder}\n\n"
+                f"Audio: mp3, m4a, opus, wav, flac\n"
+                f"Video: mp4, avi, flv, mkv, webp, webm, mov",
             )
-            self._status_bar.showMessage("No audio files found")
+            self._status_bar.showMessage("No media files found")
             return
         
         # Stop playback and clear existing tracks
@@ -256,12 +257,17 @@ class MainWindow(QMainWindow):
             volume = analyze_volume_ffmpeg(file_path)
             cleaned_avg = compute_cleaned_average(file_path)
             
+            media_type = "video" if is_video_file(file_path) else "audio"
+            
             # Extract cover art
             cover_path = extract_cover_art(file_path)
             
             # Default format from source extension
             src_ext = os.path.splitext(file_path)[1].lower()
-            ext_to_format = {".mp3": "mp3", ".wav": "wav", ".flac": "flac"}
+            ext_to_format = {".mp3": "mp3", ".wav": "wav", ".flac": "flac",
+                             ".mp4": "mp3", ".avi": "mp3", ".flv": "mp3",
+                             ".mkv": "mp3", ".webp": "mp3", ".webm": "mp3",
+                             ".mov": "mp3"}
             default_fmt = ext_to_format.get(src_ext, "mp3")
 
             track = Track(
@@ -270,6 +276,7 @@ class MainWindow(QMainWindow):
                 title=title,
                 duration_seconds=duration,
                 format=default_fmt,
+                media_type=media_type,
                 trim_start=0.0,
                 trim_end=duration,
                 average_volume_db=volume.get("mean_volume", 0.0),

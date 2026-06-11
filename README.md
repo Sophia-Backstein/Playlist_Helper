@@ -8,7 +8,7 @@ A cross-platform desktop application for managing, editing, and processing audio
 
 ## Features
 
-- **Load audio and video files** from folders — audio: mp3, m4a/flac, opus, wav; video: mp4, avi, flv, mkv, webp, webm, mov
+- **Load audio and video files** from folders — audio: mp3, m4a, flac, opus, wav; video: mp4, avi, flv, mkv, webm, mov
 - **Trim audio** with a dual-point range slider and visual preview
 - **Edit metadata** — filenames, titles, album art
 - **Extract audio from video** — convert video files to mp3, wav, or flac
@@ -117,9 +117,10 @@ Playlist_Helper/
 │   │   └── command.py       # Command history (undo/redo)
 │   └── utils/
 │       └── file_ops.py      # File operations helpers
+├── collect_test_samples.sh  # Batch-collect media into test zip
 ├── tests/
-│   ├── test_all.py          # Full test suite
-│   ├── original/            # Place your test audio files here
+│   ├── test_all.py          # Full test suite (11 formats × 9 functions)
+│   ├── original/            # Place your test media files here
 │   └── cover_test.png       # Test image for cover art tests
 ├── install_linux.sh         # Linux installer
 └── LICENSE.txt              # MIT License
@@ -144,37 +145,39 @@ python main.py --run-tests
 python main.py --run-tests --limit-per-format 5
 ```
 
-### Test audio files
+### Test audio/video files
 
-The test suite processes audio files from `tests/original/`. **No audio files are
+The test suite processes media files from `tests/original/`. **No media files are
 bundled with the repository** due to copyright concerns. You must provide your own.
 
 **To prepare test files:**
 
-1. Create or download short audio files (5-15 seconds is plenty) in these formats:
-   - `.mp3`, `.wav`, `.flac`, `.m4a` — required for full test coverage
-   - `.opus`, `.ogg`, `.aac`, `.wma`, `.m4b`, `.aiff` — optional additional coverage
-   - `.mp4`, `.avi`, `.flv`, `.mkv`, `.webm`, `.mov` — video test coverage (optional)
-2. Place them in `tests/original/`
-3. Run the tests — they will detect the files automatically
+1. Place media files (audio or video, 5-15 seconds recommended) in these formats in `tests/original/`:
+   - **Audio**: `.mp3`, `.wav`, `.flac`, `.m4a`, `.opus`
+   - **Video**: `.mp4`, `.avi`, `.flv`, `.mkv`, `.webm`, `.mov`
+2. Run `collect_test_samples.sh` from the repository root to batch-collect
+   media from the project tree into a zip archive (skips dot-folders).
+3. Run the tests — they will detect the files automatically.
 
 The test suite will warn you if no files are found and tell you where to place them.
 
 ### Test coverage
 
-The test suite covers all supported formats and operations:
+The test suite runs each file through all 9 functions. Formats without embedded
+metadata support (avi, flv, mkv, mov, mp4, opus, wav, webm) skip title/cover
+tests gracefully.
 
-| Function         | Formats | Status |
-|-----------------|---------|--------|
-| Loading         | All     | ✅     |
-| Cutting         | All     | ✅     |
-| Conversion      | All     | ✅     |
-| Filename change | All     | ✅     |
-| Title edit      | mp3, flac, m4a | ✅ *(wav/opus skipped — no metadata)* |
-| Cover art       | mp3, flac, m4a | ✅ *(wav/opus skipped — no cover support)* |
-| Volume change   | All     | ✅     |
-| Equalize avg    | All     | ✅     |
-| Equalize loudest| All     | ✅     |
+| Function         | Passing formats | Notes |
+|-----------------|----------------|-------|
+| Loading         | All 11         | Detects audio/video containers correctly |
+| Cutting         | All 11         | Trims via ffmpeg with `-vn` for video |
+| Conversion      | All 11         | Converts to mp3/wav/flac |
+| Filename change | All 11         | Rename on disk |
+| Title edit      | flac, m4a, mp3 | 8 container formats skipped (no embedded tags) |
+| Cover art       | flac, m4a, mp3 | 8 container formats skipped (no embedded cover) |
+| Volume change   | All 11         | +3dB gain; very quiet files skipped (volumedetect precision) |
+| Equalize avg    | All 11         | Normalizes to target dB |
+| Equalize loudest| All 11         | Normalizes based on loudest track |
 
 ## Architecture
 

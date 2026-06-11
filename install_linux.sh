@@ -30,10 +30,10 @@ fi
 
 # ---- Distro detection ----
 detect_distro() {
-    if [[ -f /etc/os-release ]]; then
-        . /etc/os-release
-        OS_ID="$ID"
-        OS_ID_LIKE="$ID_LIKE"
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    OS_ID="${ID:-unknown}"
+    OS_ID_LIKE="${ID_LIKE:-}"
     elif [[ -f /etc/fedora-release ]]; then
         OS_ID="fedora"
     elif [[ -f /etc/debian_version ]]; then

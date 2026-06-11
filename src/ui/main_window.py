@@ -224,7 +224,7 @@ class MainWindow(QMainWindow):
                 "No Media Files",
                 f"No supported media files found in:\n{folder}\n\n"
                 f"Audio: mp3, m4a, opus, wav, flac\n"
-                f"Video: mp4, avi, flv, mkv, webp, webm, mov",
+                f"Video: mp4, avi, flv, mkv, webm, mov",
             )
             self._status_bar.showMessage("No media files found")
             return
@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
             src_ext = os.path.splitext(file_path)[1].lower()
             ext_to_format = {".mp3": "mp3", ".wav": "wav", ".flac": "flac",
                              ".mp4": "mp3", ".avi": "mp3", ".flv": "mp3",
-                             ".mkv": "mp3", ".webp": "mp3", ".webm": "mp3",
+                             ".mkv": "mp3", ".webm": "mp3",
                              ".mov": "mp3"}
             default_fmt = ext_to_format.get(src_ext, "mp3")
 

@@ -154,7 +154,7 @@ bundled with the repository** due to copyright concerns. You must provide your o
 1. Create or download short audio files (5-15 seconds is plenty) in these formats:
    - `.mp3`, `.wav`, `.flac`, `.m4a` — required for full test coverage
    - `.opus`, `.ogg`, `.aac`, `.wma`, `.m4b`, `.aiff` — optional additional coverage
-   - `.mp4`, `.avi`, `.flv`, `.mkv`, `.webp`, `.webm`, `.mov` — video test coverage (optional)
+   - `.mp4`, `.avi`, `.flv`, `.mkv`, `.webm`, `.mov` — video test coverage (optional)
 2. Place them in `tests/original/`
 3. Run the tests — they will detect the files automatically
 

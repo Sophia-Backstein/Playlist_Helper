@@ -7,7 +7,7 @@ from typing import List
 
 SUPPORTED_EXTENSIONS = {".mp3", ".m4a", ".opus", ".wav", ".flac"}
 
-VIDEO_EXTENSIONS = {".mp4", ".avi", ".flv", ".mkv", ".webp", ".webm", ".mov"}
+VIDEO_EXTENSIONS = {".mp4", ".avi", ".flv", ".mkv", ".webm", ".mov"}
 
 SUPPORTED_MEDIA_EXTENSIONS = SUPPORTED_EXTENSIONS | VIDEO_EXTENSIONS
 

@@ -72,6 +72,8 @@ def equalize_to_average(
             codec = "libopus"
         elif ext.endswith(".flac"):
             codec = "flac"
+        elif ext.endswith(".webm"):
+            codec = "libopus"
         else:
             codec = "aac"
         
@@ -145,6 +147,8 @@ def equalize_to_loudest(
             codec = "libopus"
         elif ext.endswith(".flac"):
             codec = "flac"
+        elif ext.endswith(".webm"):
+            codec = "libopus"
         else:
             codec = "aac"
         

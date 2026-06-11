@@ -49,6 +49,8 @@ def trim_audio(
         codec_args = ["-c:a", "libopus"]
     elif out_ext == ".m4a":
         codec_args = ["-c:a", "aac"]
+    elif out_ext == ".webm":
+        codec_args = ["-c:a", "libopus"]
     else:
         codec_args = ["-c:a", "libmp3lame", "-q:a", "2"]
 

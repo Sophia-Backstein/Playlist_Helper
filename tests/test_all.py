@@ -365,6 +365,9 @@ def test_volume_change(file_path: str) -> bool:
         if mean_before == 0.0:
             # Can't analyze volume, skip test
             return True
+        if mean_before < -75.0:
+            # Very quiet file — volumedetect precision can't resolve gain
+            return True
 
         # Apply gain via ffmpeg — use lossless WAV to avoid encoder artifacts
         tmp = create_temp_file(suffix=".wav")

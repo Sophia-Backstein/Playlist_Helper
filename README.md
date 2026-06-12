@@ -152,7 +152,7 @@ bundled with the repository** due to copyright concerns. You must provide your o
 
 **To prepare test files:**
 
-1. Place media files (audio or video, 5-15 seconds recommended) in these formats in `tests/original/`:
+1. Place media files (audio or video, ~5 minutes recommended) in these formats in `tests/original/`:
    - **Audio**: `.mp3`, `.wav`, `.flac`, `.m4a`, `.opus`
    - **Video**: `.mp4`, `.avi`, `.flv`, `.mkv`, `.webm`, `.mov`
 2. Run `collect_test_samples.sh` from the repository root to batch-collect

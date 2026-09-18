@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from typing import Dict, List, Optional
 
-from .analyzer import compute_cleaned_average
+from .analyzer import compute_cleaned_average, compute_loudest_average
 from .scanner import is_video_file
 
 
@@ -122,15 +122,15 @@ def equalize_to_loudest(
         )
         os.close(fd)
     
-    cleaned_avg = compute_cleaned_average(file_path)
+    loudest_avg = compute_loudest_average(file_path)
     
-    if cleaned_avg == 0.0 or target_db is None:
+    if loudest_avg == 0.0 or target_db is None:
         # Can't analyze or no target — just copy
         import shutil
         shutil.copy2(file_path, output_path)
         return output_path
     
-    gain = round(target_db - cleaned_avg, 2)
+    gain = round(target_db - loudest_avg, 2)
     
     if gain == 0.0:
         import shutil

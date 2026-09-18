@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playlist Helper — Web</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-brand">
+      <div class="logo">♫</div>
+      <span>Playlist Helper</span>
+    </div>
+    <div class="header-actions">
+      <div class="server-status">
+        <span class="status-dot"></span>
+        <span>API Server</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- ── Sidebar ───────────────────────────────────────────────── -->
+    <aside class="app-sidebar">
+      <div style="padding:12px;border-bottom:1px solid var(--border)">
+        <div class="card-header" style="margin-bottom:8px">
+          <span>📂 Files</span>
+          <span id="track-count" style="font-weight:400">0</span>
+        </div>
+
+        <!-- Upload -->
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">⬆</div>
+          <p>Drop files here or click to upload</p>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">
+            MP3, WAV, FLAC, M4A, OPUS &amp; video formats
+          </p>
+          <input type="file" id="file-input" multiple accept=".mp3,.wav,.flac,.m4a,.opus,.mp4,.avi,.flv,.mkv,.webm,.mov">
+        </div>
+
+        <!-- Scan folder -->
+        <div class="scan-row">
+          <input type="text" id="scan-path" placeholder="/path/to/media/folder" style="font-size:0.8rem">
+          <button class="btn btn-sm" id="scan-btn">📂 Scan</button>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-sm btn-danger" id="clear-tracks">🗑 Clear All</button>
+        </div>
+      </div>
+
+      <!-- Track list -->
+      <div id="track-list-empty" class="track-list-empty">
+        <div class="empty-icon">🎵</div>
+        <p>No tracks loaded</p>
+        <p style="font-size:0.8rem">Upload files or scan a folder to get started</p>
+      </div>
+      <div class="track-list-container" id="track-list"></div>
+
+      <!-- Batch bar -->
+      <div id="batch-bar" class="batch-bar" style="display:none;margin:8px 12px;flex-wrap:wrap">
+        <span><span id="batch-count">0</span> selected</span>
+        <input type="number" id="eq-target-db" value="-16" step="0.5" style="width:70px;font-size:0.8rem;padding:4px 8px" title="Target dB">
+        <button class="btn btn-sm btn-primary" id="eq-avg-btn">Avg</button>
+        <button class="btn btn-sm btn-primary" id="eq-loud-btn">Loud</button>
+      </div>
+    </aside>
+
+    <!-- ── Content ───────────────────────────────────────────────── -->
+    <section class="app-content" style="position:relative">
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner spinner-lg"></div>
+      </div>
+
+      <!-- No selection -->
+      <div class="no-selection" id="no-selection">
+        <div class="icon">🎶</div>
+        <p>Select a track to view and edit details</p>
+        <p style="font-size:0.8rem">Upload files or scan a folder, then click a track</p>
+      </div>
+
+      <!-- Detail panel -->
+      <div id="detail-panel" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span id="selected-name">Track</span>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tab-bar">
+            <button class="tab-btn active" data-tab="tab-info">ℹ Info</button>
+            <button class="tab-btn" data-tab="tab-volume">📊 Volume</button>
+            <button class="tab-btn" data-tab="tab-trim">✂ Trim</button>
+            <button class="tab-btn" data-tab="tab-convert">🔄 Convert</button>
+            <button class="tab-btn" data-tab="tab-process">⚙ Process</button>
+            <button class="tab-btn" data-tab="tab-playback">▶ Play</button>
+            <button class="tab-btn" data-tab="tab-metadata">🏷 Metadata</button>
+          </div>
+
+          <div class="tab-content active" id="tab-info"></div>
+          <div class="tab-content" id="tab-volume"></div>
+          <div class="tab-content" id="tab-trim"></div>
+          <div class="tab-content" id="tab-convert"></div>
+          <div class="tab-content" id="tab-process"></div>
+          <div class="tab-content" id="tab-playback"></div>
+          <div class="tab-content" id="tab-metadata"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="card results-area" id="results-area" style="display:none">
+          <div class="card-header">
+            <span>📦 Results</span>
+            <button class="btn btn-sm" id="clear-results">Clear</button>
+          </div>
+          <div id="results-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
